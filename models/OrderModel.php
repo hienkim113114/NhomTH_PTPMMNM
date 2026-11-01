@@ -121,7 +121,7 @@ class OrderModel {
             $area_surcharge_percent = $order['surcharge_percent'] ?? 0;
             $deposit_deducted = $order['deposit_amount'] ?? 0;
 
-            // Đã sửa lại cú pháp tính tiền chuẩn
+            
             $area_surcharge_amount = $subtotal * ($area_surcharge_percent / 100);
             $service_charge_amount = ($subtotal + $area_surcharge_amount) * 0.05;
             $taxable_amount = $subtotal + $area_surcharge_amount + $service_charge_amount - $discount_amount;
@@ -154,4 +154,58 @@ class OrderModel {
             return ['status' => 'error', 'message' => $e->getMessage()];
         }
     }
+
+    // 6. Chuyển bàn chuẩn theo ID Bàn (Nghiệp vụ thực tế)
+    public function transferTableByTableId($from_table_id, $to_table_id, $user_id) {
+        $this->db->beginTransaction();
+        try {
+            // Lấy đơn Open mới nhất của bàn nguồn
+            $stmt = $this->db->prepare("SELECT id, order_code FROM orders WHERE table_id = ? AND status = 'Open' ORDER BY id DESC LIMIT 1");
+            $stmt->execute([$from_table_id]);
+            $fromOrder = $stmt->fetch();
+
+            if (!$fromOrder) throw new Exception("Bàn nguồn hiện không có đơn hàng nào đang mở!");
+            if ($from_table_id == $to_table_id) throw new Exception("Bàn mới phải khác bàn hiện tại!");
+
+            // Kiểm tra bàn đích xem có đơn Open nào chưa
+            $stmtTo = $this->db->prepare("SELECT id FROM orders WHERE table_id = ? AND status = 'Open' ORDER BY id DESC LIMIT 1");
+            $stmtTo->execute([$to_table_id]);
+            $toOrder = $stmtTo->fetch();
+
+            if ($toOrder) {
+                // Nếu bàn đích ĐÃ CÓ đơn -> Tự động chuyển thành GỘP BÀN
+                $to_order_id = $toOrder['id'];
+                $from_order_id = $fromOrder['id'];
+
+                $this->db->prepare("UPDATE order_details SET order_id = ? WHERE order_id = ?")->execute([$to_order_id, $from_order_id]);
+                $this->db->prepare("UPDATE orders SET status = 'Cancelled', closed_at = NOW() WHERE id = ?")->execute([$from_order_id]);
+                $this->db->prepare("UPDATE dining_tables SET status = 'Available' WHERE id = ?")->execute([$from_table_id]);
+                
+                // Tính lại tổng tiền
+                $this->db->prepare("UPDATE orders SET subtotal = (SELECT IFNULL(SUM(quantity * unit_price), 0) FROM order_details WHERE order_id = ? AND kds_status != 'Cancelled') WHERE id = ?")
+                    ->execute([$to_order_id, $to_order_id]);
+
+                $msg = "Gộp bàn thành công!";
+            } else {
+                // Nếu bàn đích TRỐNG -> CHUYỂN BÀN
+                $this->db->prepare("UPDATE orders SET table_id = ? WHERE id = ?")->execute([$to_table_id, $fromOrder['id']]);
+                $this->db->prepare("UPDATE dining_tables SET status = 'Available' WHERE id = ?")->execute([$from_table_id]);
+                $this->db->prepare("UPDATE dining_tables SET status = 'Occupied' WHERE id = ?")->execute([$to_table_id]);
+
+                $msg = "Chuyển bàn thành công!";
+            }
+
+            // Ghi nhật ký hệ thống
+            $this->db->prepare("INSERT INTO order_logs (order_id, user_id, action_type, description) VALUES (?, ?, 'TransferTable', ?)")
+                ->execute([$fromOrder['id'], $user_id, $msg . " Từ bàn ID {$from_table_id} sang bàn ID {$to_table_id}"]);
+
+            $this->db->commit();
+            return ['status' => 'success', 'message' => $msg];
+        } catch (Exception $e) {
+            $this->db->rollBack();
+            return ['status' => 'error', 'message' => $e->getMessage()];
+        }
+    }
+
+   
 }

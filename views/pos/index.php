@@ -42,14 +42,21 @@
                 <!-- Chọn bàn & Thực đơn -->
                 <div class="col-lg-7">
                     <div class="card card-custom p-3 shadow-sm h-100">
-                        <h5 class="text-gold mb-3">🍽️ Chọn Bàn & Thực Đơn</h5>
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5 class="text-gold m-0">🍽️ Chọn Bàn & Thực Đơn</h5>
+                            <div class="d-flex gap-2">
+                                <button class="btn btn-outline-warning text-gold border-secondary btn-sm" onclick="showTransferModal()">🔄 Chuyển Bàn</button>
+                                <button class="btn btn-outline-warning text-gold border-secondary btn-sm" onclick="showMergeModal()">🔀 Gộp Bàn</button>
+                            </div>
+                        </div>
+
                         <div class="row g-3 mb-3">
                             <div class="col-md-6">
                                 <label class="form-label text-muted small">Bàn Phục Vụ</label>
-                                <select id="table_id" class="form-select bg-dark text-white border-secondary">
-                                    <option value="1">Bàn T-101 (Sảnh Symphony)</option>
-                                    <option value="2">Bàn T-102 (Sảnh Symphony)</option>
-                                    <option value="3">Phòng VIP-01 (Hầm Rượu VIP)</option>
+                                <select id="table_id" class="form-select bg-dark text-white border-secondary" onchange="renderCart()">
+                                    <option value="1" data-surcharge="0">Bàn T-101 [ID: 1] (Sảnh Symphony - Surcharge 0%)</option>
+                                    <option value="2" data-surcharge="0">Bàn T-102 [ID: 2] (Sảnh Symphony - Surcharge 0%)</option>
+                                    <option value="3" data-surcharge="10">Phòng VIP-01 [ID: 3] (Hầm Rượu VIP - Surcharge 10%)</option>
                                 </select>
                             </div>
                             <div class="col-md-6">
@@ -58,25 +65,47 @@
                             </div>
                         </div>
 
-                        <!-- Danh sách món mẫu -->
+                        <!-- Danh sách 4 món ăn theo SQL -->
                         <label class="form-label text-muted small">Chọn Món Ăn Thượng Hạng</label>
                         <div class="row g-2 mb-3">
+                            <!-- Món 1 -->
                             <div class="col-md-6">
                                 <div class="p-3 border border-secondary rounded-3 bg-dark d-flex justify-content-between align-items-center">
                                     <div>
                                         <div class="fw-bold text-white">Sò điệp Hokkaido áp chảo</div>
                                         <small class="text-gold">450,000 VNĐ</small>
                                     </div>
-                                    <button class="btn btn-sm btn-gold" onclick="addItemToCart(1, 'Sò điệp Hokkaido', 450000)">+ Thêm</button>
+                                    <button class="btn btn-sm btn-gold" onclick="addItemToCart(1, 'Sò điệp Hokkaido áp chảo', 450000)">+ Thêm</button>
                                 </div>
                             </div>
+                            <!-- Món 2 -->
                             <div class="col-md-6">
                                 <div class="p-3 border border-secondary rounded-3 bg-dark d-flex justify-content-between align-items-center">
                                     <div>
                                         <div class="fw-bold text-white">Thăn bò Wagyu A5 đá muối</div>
                                         <small class="text-gold">1,850,000 VNĐ</small>
                                     </div>
-                                    <button class="btn btn-sm btn-gold" onclick="addItemToCart(2, 'Thăn bò Wagyu A5', 1850000)">+ Thêm</button>
+                                    <button class="btn btn-sm btn-gold" onclick="addItemToCart(2, 'Thăn bò Wagyu A5 đá muối', 1850000)">+ Thêm</button>
+                                </div>
+                            </div>
+                            <!-- Món 3 -->
+                            <div class="col-md-6">
+                                <div class="p-3 border border-secondary rounded-3 bg-dark d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <div class="fw-bold text-white">Bánh Tiramisu phủ vàng 24K</div>
+                                        <small class="text-gold">290,000 VNĐ</small>
+                                    </div>
+                                    <button class="btn btn-sm btn-gold" onclick="addItemToCart(3, 'Bánh Tiramisu phủ vàng 24K', 290000)">+ Thêm</button>
+                                </div>
+                            </div>
+                            <!-- Món 4 -->
+                            <div class="col-md-6">
+                                <div class="p-3 border border-secondary rounded-3 bg-dark d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <div class="fw-bold text-white">Rượu vang Château Margaux</div>
+                                        <small class="text-gold">650,000 VNĐ</small>
+                                    </div>
+                                    <button class="btn btn-sm btn-gold" onclick="addItemToCart(4, 'Rượu vang Château Margaux', 650000)">+ Thêm</button>
                                 </div>
                             </div>
                         </div>
@@ -105,6 +134,10 @@
                                     <span id="subtotalText">0 VNĐ</span>
                                 </div>
                                 <div class="d-flex justify-content-between text-muted mb-1">
+                                    <span>Phụ thu khu vực:</span>
+                                    <span id="surchargeText">0 VNĐ</span>
+                                </div>
+                                <div class="d-flex justify-content-between text-muted mb-1">
                                     <span>Phí dịch vụ (5%):</span>
                                     <span id="serviceChargeText">0 VNĐ</span>
                                 </div>
@@ -116,6 +149,7 @@
 
                             <div class="d-grid gap-2">
                                 <button onclick="submitOrder()" class="btn btn-gold py-2">🔥 Gửi Order Cho Bếp (KDS)</button>
+                                <button onclick="checkoutAction()" class="btn btn-outline-success py-2">💳 Thanh Toán (Checkout VietQR)</button>
                             </div>
                         </div>
                     </div>
@@ -131,7 +165,7 @@
                     <button onclick="loadKDS()" class="btn btn-sm btn-outline-warning">🔄 Làm mới danh sách</button>
                 </div>
                 <div id="kdsContainer" class="row g-3">
-                    <!-- Data KDS sẽ render vào đây -->
+                    <!-- Data KDS render ở đây -->
                 </div>
             </div>
         </div>
@@ -156,6 +190,7 @@ function renderCart() {
     if (currentCart.length === 0) {
         container.innerHTML = '<p class="text-muted text-center py-4">Chưa có món nào được chọn</p>';
         document.getElementById('subtotalText').innerText = '0 VNĐ';
+        document.getElementById('surchargeText').innerText = '0 VNĐ';
         document.getElementById('serviceChargeText').innerText = '0 VNĐ';
         document.getElementById('totalText').innerText = '0 VNĐ';
         return;
@@ -180,10 +215,15 @@ function renderCart() {
     html += '</ul>';
     container.innerHTML = html;
 
-    const serviceCharge = subtotal * 0.05;
-    const total = subtotal + serviceCharge;
+    const tableSelect = document.getElementById('table_id');
+    const surchargePercent = parseFloat(tableSelect.options[tableSelect.selectedIndex].getAttribute('data-surcharge') || 0);
+    
+    const surchargeAmount = subtotal * (surchargePercent / 100);
+    const serviceCharge = (subtotal + surchargeAmount) * 0.05;
+    const total = subtotal + surchargeAmount + serviceCharge;
 
     document.getElementById('subtotalText').innerText = subtotal.toLocaleString() + ' VNĐ';
+    document.getElementById('surchargeText').innerText = surchargeAmount.toLocaleString() + ' VNĐ (' + surchargePercent + '%)';
     document.getElementById('serviceChargeText').innerText = serviceCharge.toLocaleString() + ' VNĐ';
     document.getElementById('totalText').innerText = total.toLocaleString() + ' VNĐ';
 }
@@ -245,17 +285,87 @@ function loadKDS() {
                 <div class="col-md-4">
                     <div class="p-3 rounded-3 kds-card">
                         <div class="d-flex justify-content-between align-items-center mb-2">
-                            <span class="badge bg-gold text-dark fw-bold">${item.table_name}</span>
+                            <span class="badge bg-gold text-dark fw-bold">${item.table_name} (Đơn ID: ${item.order_id})</span>
                             <span class="badge bg-warning text-dark badge-status">${item.kds_status}</span>
                         </div>
                         <h5 class="fw-bold text-white mb-1">${item.item_name} <span class="text-gold">x${item.quantity}</span></h5>
-                        <p class="small text-muted mb-2">Ghi chú: ${item.modifier_notes || 'Không có'}</p>
-                        <div class="small text-secondary mb-3">Gọi lúc: ${item.ordered_at}</div>
+                        <p class="small text-muted mb-1">Ghi chú: ${item.modifier_notes || 'Không có'}</p>
+                        <div class="small text-secondary mb-2">Món ID: ${item.id} | Gọi lúc: ${item.ordered_at}</div>
+                        <button class="btn btn-sm btn-outline-danger w-100" onclick="cancelItemAction(${item.id})">❌ Hủy Món</button>
                     </div>
                 </div>
             `;
         });
         container.innerHTML = html;
+    });
+}
+
+function showTransferModal() {
+    const fromTableSelect = document.getElementById('table_id');
+    const fromTableId = fromTableSelect.value;
+    const fromTableName = fromTableSelect.options[fromTableSelect.selectedIndex].text;
+
+    const toTableId = prompt(`Bạn đang chọn: [${fromTableName}]\nNhập ID BÀN MỚI muốn chuyển/gộp đến (Ví dụ: 1, 2 hoặc 3):`);
+    if (!toTableId) return;
+
+    fetch('index.php?c=pos&a=transferTable', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+            from_table_id: parseInt(fromTableId), 
+            to_table_id: parseInt(toTableId) 
+        })
+    })
+    .then(res => res.json())
+    .then(res => {
+        alert(res.message);
+        if(res.status === 'success') location.reload();
+    });
+}
+
+function showMergeModal() {
+    showTransferModal(); 
+}
+
+function cancelItemAction(orderDetailId) {
+    const reason = prompt("Nhập lý do hủy món (bắt buộc để ghi log):");
+    if (!reason) return;
+
+    fetch('index.php?c=pos&a=cancelItem', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ order_detail_id: orderDetailId, reason: reason })
+    })
+    .then(res => res.json())
+    .then(res => {
+        alert(res.message);
+        if(res.status === 'success') loadKDS();
+    });
+}
+
+function checkoutAction() {
+    const orderId = prompt("Nhập ID Đơn hàng cần thanh toán (Xem tại tab Bếp KDS):");
+    if (!orderId) return;
+
+    fetch('index.php?c=pos&a=checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            order_id: parseInt(orderId),
+            cashier_id: 1,
+            payment_method: 'VietQR',
+            discount_amount: 0
+        })
+    })
+    .then(res => res.json())
+    .then(res => {
+        if (res.status === 'success') {
+            alert(`🎉 Thanh toán thành công! Tổng tiền: ${res.total_amount.toLocaleString()} VNĐ`);
+            if (res.vietqr_url) window.open(res.vietqr_url, '_blank');
+            location.reload();
+        } else {
+            alert('❌ Lỗi thanh toán: ' + res.message);
+        }
     });
 }
 </script>

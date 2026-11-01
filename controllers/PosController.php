@@ -48,4 +48,30 @@ class PosController {
         echo json_encode($result);
         exit;
     }
+
+  
+    // API Chuyển / Gộp bàn theo Table ID
+    public function transferTable() {
+        if (ob_get_length()) ob_clean();
+        header('Content-Type: application/json');
+        $data = json_decode(file_get_contents('php://input'), true);
+
+        $user_id = $_SESSION['user']['id'] ?? 1;
+        $result = $this->orderModel->transferTableByTableId($data['from_table_id'], $data['to_table_id'], $user_id);
+        echo json_encode($result);
+        exit;
+    }
+
+
+    // API Hủy món
+    public function cancelItem() {
+        if (ob_get_length()) ob_clean();
+        header('Content-Type: application/json');
+        $data = json_decode(file_get_contents('php://input'), true);
+
+        $user_id = $_SESSION['user']['id'] ?? 1;
+        $result = $this->orderModel->cancelOrderItem($data['order_detail_id'], $user_id, $data['reason']);
+        echo json_encode($result);
+        exit;
+    }
 }
