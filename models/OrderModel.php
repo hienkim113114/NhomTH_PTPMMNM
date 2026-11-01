@@ -155,7 +155,7 @@ class OrderModel {
         }
     }
 
-    // 6. Chuyển bàn chuẩn theo ID Bàn (Nghiệp vụ thực tế)
+    // 6. Chuyển bàn chuẩn theo ID Bàn 
     public function transferTableByTableId($from_table_id, $to_table_id, $user_id) {
         $this->db->beginTransaction();
         try {
@@ -206,6 +206,33 @@ class OrderModel {
             return ['status' => 'error', 'message' => $e->getMessage()];
         }
     }
+// Lấy dữ liệu in hóa đơn 
+    public function getBillData($order_id) {
+        $sqlOrder = "SELECT o.*, dt.table_name, a.name AS area_name, u.full_name AS waiter_name, c.full_name AS customer_name
+                     FROM orders o
+                     JOIN dining_tables dt ON o.table_id = dt.id
+                     JOIN areas a ON dt.area_id = a.id
+                     LEFT JOIN users u ON o.waiter_id = u.id
+                     LEFT JOIN customers c ON o.customer_id = c.id
+                     WHERE o.id = ?";
+        $stmt = $this->db->prepare($sqlOrder);
+        $stmt->execute([$order_id]);
+        $order = $stmt->fetch();
 
+        if (!$order) return null;
+
+        $sqlDetails = "SELECT od.*, mi.name AS item_name, mi.unit 
+                       FROM order_details od
+                       JOIN menu_items mi ON od.menu_item_id = mi.id
+                       WHERE od.order_id = ? AND od.kds_status != 'Cancelled'";
+        $stmtDetails = $this->db->prepare($sqlDetails);
+        $stmtDetails->execute([$order_id]);
+        $details = $stmtDetails->fetchAll();
+
+        return [
+            'order' => $order,
+            'details' => $details
+        ];
+    }
    
 }

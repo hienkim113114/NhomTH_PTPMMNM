@@ -5,7 +5,6 @@ class PosController {
     private $orderModel;
 
     public function __construct() {
-        // Đã sửa $this.orderModel thành $this->orderModel
         $this->orderModel = new OrderModel();
     }
 
@@ -73,5 +72,19 @@ class PosController {
         $result = $this->orderModel->cancelOrderItem($data['order_detail_id'], $user_id, $data['reason']);
         echo json_encode($result);
         exit;
+    }
+
+    public function printBill() {
+        $order_id = $_GET['order_id'] ?? 0;
+        $billData = $this->orderModel->getBillData($order_id);
+
+        if (!$billData) {
+            echo "<h3>Không tìm thấy dữ liệu hóa đơn!</h3>";
+            exit;
+        }
+
+        $order = $billData['order'];
+        $details = $billData['details'];
+        require_once __DIR__ . '/../views/pos/print_bill.php';
     }
 }

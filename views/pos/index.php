@@ -148,9 +148,10 @@
                             </div>
 
                             <div class="d-grid gap-2">
-                                <button onclick="submitOrder()" class="btn btn-gold py-2">🔥 Gửi Order Cho Bếp (KDS)</button>
-                                <button onclick="checkoutAction()" class="btn btn-outline-success py-2">💳 Thanh Toán (Checkout VietQR)</button>
-                            </div>
+                            <button onclick="submitOrder()" class="btn btn-gold py-2">🔥 Gửi Order Cho Bếp (KDS)</button>
+                            <button onclick="checkoutAction()" class="btn btn-outline-success py-2">💳 Thanh Toán (Checkout VietQR)</button>
+                            <button onclick="printBillAction()" class="btn btn-outline-info py-2">🖨️ In Hóa Đơn (HTML/PDF)</button>
+                        </div>
                         </div>
                     </div>
                 </div>
@@ -165,7 +166,6 @@
                     <button onclick="loadKDS()" class="btn btn-sm btn-outline-warning">🔄 Làm mới danh sách</button>
                 </div>
                 <div id="kdsContainer" class="row g-3">
-                    <!-- Data KDS render ở đây -->
                 </div>
             </div>
         </div>
@@ -342,7 +342,14 @@ function cancelItemAction(orderDetailId) {
         if(res.status === 'success') loadKDS();
     });
 }
+// Hàm in hóa đơn trực tiếp bằng cách nhập ID Đơn hàng
+function printBillAction() {
+    const orderId = prompt("Nhập ID Đơn hàng cần in hóa đơn (Xem ID Đơn tại tab Bếp KDS):");
+    if (!orderId) return;
+    window.open(`index.php?c=pos&a=printBill&order_id=${orderId}`, '_blank', 'width=450,height=700');
+}
 
+// Cập nhật hàm Thanh toán -> Tự động mở Bill in sau khi thanh toán xong
 function checkoutAction() {
     const orderId = prompt("Nhập ID Đơn hàng cần thanh toán (Xem tại tab Bếp KDS):");
     if (!orderId) return;
@@ -361,7 +368,13 @@ function checkoutAction() {
     .then(res => {
         if (res.status === 'success') {
             alert(`🎉 Thanh toán thành công! Tổng tiền: ${res.total_amount.toLocaleString()} VNĐ`);
+            
+            // 1. Tự động bật cửa sổ in Hóa đơn HTML/PDF
+            window.open(`index.php?c=pos&a=printBill&order_id=${orderId}`, '_blank', 'width=450,height=700');
+            
+            // 2. Mở VietQR nếu có
             if (res.vietqr_url) window.open(res.vietqr_url, '_blank');
+            
             location.reload();
         } else {
             alert('❌ Lỗi thanh toán: ' + res.message);
